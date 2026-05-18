@@ -1,0 +1,733 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>室内设计助理作品集 - 空间与光影</title>
+    
+    <!-- 引入外部数据文件（用于发布到网上时读取最新数据） -->
+    <script src="data.js" onerror="console.log('未检测到外部 data.js，使用本地缓存或默认数据。这是正常现象。')"></script>
+
+    <!-- 引入 React 核心库 -->
+    <script crossorigin src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+    <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+    
+    <!-- 引入 Babel 用于在浏览器中编译 JSX -->
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+    
+    <!-- 引入 Tailwind CSS 用于样式 -->
+    <script src="https://cdn.tailwindcss.com"></script>
+
+    <!-- 新增：引入 localForage 突破浏览器5MB存储限制，提升至GB级别 -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/localforage/1.10.0/localforage.min.js"></script>
+    
+    <style>
+        ::-webkit-scrollbar { width: 8px; }
+        ::-webkit-scrollbar-track { background: #000; }
+        ::-webkit-scrollbar-thumb { background: #333; }
+        ::-webkit-scrollbar-thumb:hover { background: #a34e24; }
+        [contenteditable]:focus { outline: none; background-color: rgba(163, 78, 36, 0.1); }
+        
+        @keyframes fadeInDown {
+            from { opacity: 0; transform: translate(-50%, -20px); }
+            to { opacity: 1; transform: translate(-50%, 0); }
+        }
+        .animate-fade-in-down { animation: fadeInDown 0.3s ease-out forwards; }
+
+        .tech-grid-bg {
+            background-image: radial-gradient(rgba(163, 78, 36, 0.15) 1px, transparent 1px);
+            background-size: 30px 30px;
+        }
+    </style>
+</head>
+<body class="bg-black text-gray-200">
+    <div id="root"></div>
+
+    <script type="text/babel">
+        const { useState, useEffect, useRef } = React;
+
+        const ACCENT_COLOR = '#a34e24'; 
+        const EDIT_PASSWORD = '253526';
+        const STORAGE_KEY = 'portfolio_data_v4'; 
+
+        const defaultData = {
+            hero: {
+                subtitleTop: "Spatial Design Portfolio",
+                titleLine1: "S p a t i a l",
+                titleLine2: "D e s i g n",
+                subtitleBottom: "空间设计作品集 | Crafting Space And Light"
+            },
+            aiWorkflow: {
+                title: "AI-Driven Workflow",
+                subtitle: "将AI工具融入视觉设计工作流",
+                description: "在传统的空间推敲之外，我将前沿的AIGC技术深度植入设计流。从概念期的意向生成到后期的渲染重绘，AI工具极大地提升了图纸深化的效率与多样性。",
+                tools: [
+                    { id: 1, name: "CONCEPT GENERATION", desc: "利用 Midjourney / Stable Diffusion 进行早期的空间氛围构建与材质概念探索，快速与主创对齐视觉语言。" },
+                    { id: 2, name: "RENDERING ENHANCEMENT", desc: "结合 AI 放大与局部重绘技术 (Inpainting)，为 SU 白膜赋予逼真的光影与材质质感，加速效果图呈现过程。" },
+                    { id: 3, name: "LAYOUT OPTIMIZATION", desc: "使用智能化工具辅助分析平面动线，快速生成不同排列组合的家具落位方案，提高出图的严谨性与效率。" }
+                ]
+            },
+            about: {
+                title: "The Architecture \n of Shadows",
+                p1: "作为一名室内设计助理，我的工作是在宏大的空间概念与最终的落地细节之间搭建桥梁。从原始结构的拆改分析、平面布局的推敲，到SU白膜的推敲与3D效果图的视觉呈现，每一个环节都在塑造空间的脾性。",
+                p2: "我深信“光”是室内空间最好的材质。无论是大平层的自然光引入，还是地下娱乐区的氛围照明，我致力于协助主创团队，用近乎苛刻的节点深化，让光影在材质上留下时间的刻度。",
+                portrait: "https://images.unsplash.com/photo-1497366754035-f200968a6e72?q=80&w=1000&auto=format&fit=crop"
+            },
+            resume: {
+                name: "YOUR NAME / 您的名字",
+                title: "室内设计助理 / 空间视觉表现",
+                contactPhone: "T: +86 138 0000 0000",
+                contactEmail: "E: design@studio.space",
+                eduTitle: "EDUCATION / 教育背景",
+                eduDetail: "2018 - 2022\n某知名大学\n环境艺术设计专业 | 学士学位\n主修空间规划、人体工程学与建筑表现。",
+                expTitle: "EXPERIENCE / 工作经历",
+                expDetail: "2022.07 - 至今 | 某知名设计事务所\n室内设计助理\n- 协助主创完成高端私宅/大平层的平面方案与推敲\n- 负责核心图纸深化 (CAD施工图、立面图节点)\n- 负责SU白膜动画与高精度3D视觉表现",
+                skillsTitle: "SOFTWARE & SKILLS / 技能专长",
+                skillsDetail: "✓ AutoCAD (精确施工图深化)\n✓ SketchUp / Enscape (空间推敲与漫游)\n✓ 3ds Max / Corona (高精度渲染)\n✓ Midjourney / SD (AI概念生成辅助)\n✓ Adobe PS / ID (物料排版与后期)"
+            },
+            projects: [
+                {
+                    id: '01',
+                    title: '云山壹号',
+                    category: '别墅私宅',
+                    role: '室内设计助理',
+                    year: '2023',
+                    client: 'Private',
+                    image: 'https://images.unsplash.com/photo-1600596542815-ffad4c1539a9?q=80&w=1000&auto=format&fit=crop',
+                    detailImages: [
+                        'https://images.unsplash.com/photo-1600607687939-ce8a6c25118c?q=80&w=1000&auto=format&fit=crop',
+                        'https://images.unsplash.com/photo-1600566753190-17f0baa2a6c3?q=80&w=1000&auto=format&fit=crop'
+                    ],
+                    description: '参与外立面分析、CAD施工图深化及多层地下室的效果跟进。',
+                    fullDescription: '深度参与多层空间的功能梳理，尤其是地下二层的健身区与篮球场。通过精细的CAD图纸绘制，协助主创将复杂的空间动线完美落地。'
+                },
+                {
+                    id: '02',
+                    title: '钻石湾',
+                    category: '高端平层',
+                    role: '室内设计助理',
+                    year: '2023',
+                    client: 'Private',
+                    image: 'https://images.unsplash.com/photo-1600210492486-724fe5c67fb0?q=80&w=1000&auto=format&fit=crop',
+                    detailImages: [
+                        'https://images.unsplash.com/photo-1600585154340-be6161a56a0c?q=80&w=1000&auto=format&fit=crop'
+                    ],
+                    description: '协助完成原始建筑平面图绘制及空间方案对比优化。',
+                    fullDescription: '负一楼及各楼层的多功能室、主卫的深化设计。通过PPT方案排版与3D效果图跟进吧台区不同材质方案的对比，确保了空间质感与照明设计的契合。'
+                },
+                {
+                    id: '03',
+                    title: '天銮',
+                    category: '大平层',
+                    role: '室内设计助理',
+                    year: '2023',
+                    client: 'Private',
+                    image: 'https://images.unsplash.com/photo-1618221195710-dd6b41faaea6?q=80&w=1000&auto=format&fit=crop',
+                    detailImages: [
+                        'https://images.unsplash.com/photo-1614728263952-84ea256f9679?q=80&w=1000&auto=format&fit=crop'
+                    ],
+                    description: '原始空间梳理，墙体改动及细节尺寸放样。',
+                    fullDescription: '针对大平层的特殊尺度进行空间重构。在施工落地阶段，对柜体踢脚线、暗藏灯带等收口细节进行推敲，呈现出纯粹且具有层次感的起居空间。'
+                },
+                {
+                    id: '04',
+                    title: '华标',
+                    category: '独栋别墅',
+                    role: '室内设计助理',
+                    year: '2024',
+                    client: 'Private',
+                    image: 'https://images.unsplash.com/photo-1512917774080-9991f1c4c750?q=80&w=1000&auto=format&fit=crop',
+                    detailImages: [
+                        'https://images.unsplash.com/photo-1600566753086-00f18efc204b?q=80&w=1000&auto=format&fit=crop'
+                    ],
+                    description: '楼层空间剖面分析、SU模型推敲与动线解析。',
+                    fullDescription: '参与前期区位分析及整体楼层功能规划。主导了SU白膜动画制作与平面方案的排版对比，向客户展示了负一层水景与休闲区的互动关系。'
+                },
+                {
+                    id: '05',
+                    title: '红树东岸',
+                    category: '住宅样板',
+                    role: '室内设计助理',
+                    year: '2024',
+                    client: 'Vanke',
+                    image: 'https://images.unsplash.com/photo-1497366216548-37526070297c?q=80&w=1000&auto=format&fit=crop',
+                    detailImages: [
+                        'https://images.unsplash.com/photo-1497366811353-6870744d04b2?q=80&w=1000&auto=format&fit=crop'
+                    ],
+                    description: '项目区位分析与空间落位，协助制作高品质白膜漫游。',
+                    fullDescription: '协助团队完成了详尽的楼层空间分析图表与平面解析（家政区、睡眠区及娱乐区）。通过精细的SU建模，输出了直观的空间体量关系动画。'
+                },
+                {
+                    id: '06',
+                    title: '滨海中心',
+                    category: '重点项目',
+                    role: '室内设计助理',
+                    year: '2024',
+                    client: '仁恒',
+                    image: 'https://images.unsplash.com/photo-1545324418-cc1a3fa10c00?q=80&w=1000&auto=format&fit=crop',
+                    detailImages: [
+                        'https://images.unsplash.com/photo-1506501139174-099022df5260?q=80&w=1000&auto=format&fit=crop'
+                    ],
+                    description: '参与重点豪宅项目的SU推敲、效果图跟进与材质排版。',
+                    fullDescription: '深度参与大平层的平面布局解析。负责核心区域的3D效果排版与物料梳理（石材、木饰面）。确保了现代轻奢风格理念的内外统一。'
+                }
+            ]
+        };
+
+        const mergeData = (savedData) => {
+            return {
+                ...defaultData,
+                ...savedData,
+                resume: savedData.resume || defaultData.resume,
+                about: savedData.about || defaultData.about,
+                hero: savedData.hero || defaultData.hero,
+                aiWorkflow: savedData.aiWorkflow || defaultData.aiWorkflow
+            };
+        };
+
+        // 核心剥离：把聚光灯背景抽出为一个独立的组件，确保它追踪鼠标时，不会强制刷新文字输入框！
+        const BackgroundGlow = () => {
+            const [mousePosition, setMousePosition] = useState({ x: 0, y: 0 });
+
+            useEffect(() => {
+                let animationFrameId;
+                const handleMouseMove = (e) => {
+                    cancelAnimationFrame(animationFrameId);
+                    animationFrameId = requestAnimationFrame(() => {
+                        setMousePosition({ x: e.clientX, y: e.clientY });
+                    });
+                };
+                window.addEventListener('mousemove', handleMouseMove);
+                return () => {
+                    window.removeEventListener('mousemove', handleMouseMove);
+                    cancelAnimationFrame(animationFrameId);
+                };
+            }, []);
+
+            return (
+                <div 
+                    className="pointer-events-none fixed inset-0 z-0 transition-opacity duration-300"
+                    style={{ background: `radial-gradient(circle 800px at ${mousePosition.x}px ${mousePosition.y}px, rgba(163, 78, 36, 0.12), transparent 70%)` }} 
+                />
+            );
+        };
+
+        const EditableText = ({ text, isEditing, onChange, tagName = 'div', className = '', style = {} }) => {
+            const Tag = tagName;
+            const handleBlur = (e) => {
+                let newText = e.target.innerText;
+                // 即使完全删空，也保留一个空格，防止节点崩溃
+                if (!newText || newText.trim() === '') {
+                    newText = ' ';
+                }
+                if(onChange) onChange(newText);
+            };
+            return (
+                <Tag 
+                    className={`${className} ${isEditing ? 'border border-dashed border-[#a34e24] bg-white/5 cursor-text px-1 rounded min-h-[1.5em]' : ''} transition-all`}
+                    contentEditable={isEditing}
+                    suppressContentEditableWarning={true}
+                    onBlur={handleBlur}
+                    onClick={(e) => { if(isEditing) e.stopPropagation(); }}
+                    style={{ whiteSpace: 'pre-line', ...style }}
+                    dangerouslySetInnerHTML={{ __html: text || ' ' }}
+                />
+            );
+        };
+
+        const EditableImage = ({ src, isEditing, onChange, className = '', imgClassName = '', style = {} }) => {
+            const fileRef = useRef(null);
+            
+            const handleFileChange = (e) => {
+                const file = e.target.files[0];
+                if (file) {
+                    const reader = new FileReader();
+                    reader.onload = (event) => {
+                        const img = new Image();
+                        img.onload = () => {
+                            const canvas = document.createElement('canvas');
+                            let width = img.width;
+                            let height = img.height;
+                            
+                            // 升级压缩算法：同时限制宽和高，防止室内竖向长图导致体积过大
+                            const MAX_DIMENSION = 1200;
+                            if (width > MAX_DIMENSION || height > MAX_DIMENSION) {
+                                if (width > height) {
+                                    height = Math.round((height * MAX_DIMENSION) / width);
+                                    width = MAX_DIMENSION;
+                                } else {
+                                    width = Math.round((width * MAX_DIMENSION) / height);
+                                    height = MAX_DIMENSION;
+                                }
+                            }
+                            canvas.width = width;
+                            canvas.height = height;
+                            
+                            const ctx = canvas.getContext('2d');
+                            ctx.drawImage(img, 0, 0, width, height);
+                            
+                            // 强制使用 JPEG 以避免部分苹果设备不支持 WebP 时回退到体积巨大的 PNG
+                            const compressedBase64 = canvas.toDataURL('image/jpeg', 0.6);
+                            if(onChange) onChange(compressedBase64);
+                        };
+                        img.src = event.target.result;
+                    };
+                    reader.readAsDataURL(file);
+                }
+            };
+
+            return (
+                <div className={`relative ${className}`}>
+                    <img src={src} className={imgClassName} alt="Portfolio Asset" style={style} />
+                    {isEditing && (
+                        <div 
+                            className="absolute inset-0 bg-black/60 flex items-center justify-center cursor-pointer hover:bg-black/80 transition-all border-2 border-dashed border-[#a34e24] z-10 group rounded-sm"
+                            onClick={(e) => { e.stopPropagation(); fileRef.current.click(); }}
+                        >
+                            <span className="text-white text-xs bg-[#a34e24] px-4 py-2 rounded uppercase tracking-widest transform group-hover:scale-105 transition-transform text-center shadow-lg pointer-events-none">
+                                点击更换图片<br/><span className="text-[10px] opacity-70">移动端 JPEG 极速压缩</span>
+                            </span>
+                            <input type="file" hidden accept="image/*" ref={fileRef} onChange={handleFileChange} />
+                        </div>
+                    )}
+                </div>
+            );
+        };
+
+        function App() {
+            // 初始状态先挂载默认数据
+            const [data, setData] = useState(window.PORTFOLIO_DATA ? mergeData(window.PORTFOLIO_DATA) : defaultData);
+            const [isDataLoaded, setIsDataLoaded] = useState(!!window.PORTFOLIO_DATA);
+
+            const [isEditingMode, setIsEditingMode] = useState(false);
+            const [isLoaded, setIsLoaded] = useState(false);
+            const [currentView, setCurrentView] = useState('home'); 
+            const [activeProject, setActiveProject] = useState(null);
+            
+            const [showPasswordModal, setShowPasswordModal] = useState(false);
+            const [passwordInput, setPasswordInput] = useState('');
+            const [alertMessage, setAlertMessage] = useState('');
+
+            // 初始化：异步加载 IndexedDB 大容量数据库中的数据
+            useEffect(() => {
+                if (!window.PORTFOLIO_DATA) {
+                    localforage.getItem(STORAGE_KEY).then(storedData => {
+                        if (storedData) {
+                            setData(mergeData(storedData));
+                        }
+                        setIsDataLoaded(true);
+                    }).catch(err => {
+                        console.error("读取数据库失败:", err);
+                        setIsDataLoaded(true);
+                    });
+                }
+            }, []);
+
+            // 存入本地大容量数据库 (彻底解决 5MB 限制报错的问题)
+            useEffect(() => {
+                if (isDataLoaded && !window.PORTFOLIO_DATA) {
+                    localforage.setItem(STORAGE_KEY, data).catch(e => {
+                        console.error("存储失败:", e);
+                        triggerAlert("⚠️ 存储失败：您的设备磁盘空间可能已满！");
+                    });
+                }
+            }, [data, isDataLoaded]);
+
+            useEffect(() => {
+                setTimeout(() => setIsLoaded(true), 100);
+            }, []);
+
+            const navigateTo = (view, project = null) => {
+                if (isEditingMode) return; 
+                setIsLoaded(false);
+                setTimeout(() => {
+                    setActiveProject(project);
+                    setCurrentView(view);
+                    window.scrollTo(0, 0);
+                    setIsLoaded(true);
+                }, 400); 
+            };
+
+            const triggerAlert = (msg) => {
+                setAlertMessage(msg);
+                setTimeout(() => setAlertMessage(''), 4500);
+            };
+
+            const toggleEditMode = () => {
+                if (isEditingMode) {
+                    setIsEditingMode(false);
+                    triggerAlert("已退出编辑模式。修改已安全保存在本地，记得导出打包！");
+                } else {
+                    setPasswordInput('');
+                    setShowPasswordModal(true);
+                }
+            };
+
+            const handlePasswordSubmit = () => {
+                if (passwordInput === EDIT_PASSWORD) {
+                    setIsEditingMode(true);
+                    setShowPasswordModal(false);
+                    triggerAlert("编辑模式开启！现已升级大容量数据库，可放心上传图片。");
+                } else {
+                    triggerAlert("密码错误！请重试。");
+                }
+            };
+
+            const exportDataForPublish = () => {
+                const dataStr = `// 自动生成于：${new Date().toLocaleString()}\n// 已启用 JPEG 高效压缩\nwindow.PORTFOLIO_DATA = ${JSON.stringify(data, null, 2)};`;
+                const blob = new Blob([dataStr], { type: "text/javascript" });
+                const url = URL.createObjectURL(blob);
+                
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = 'data.js';
+                a.click();
+                URL.revokeObjectURL(url);
+                
+                triggerAlert("数据下载成功！将 data.js 与 html 放在同一文件夹即可生成永久连接。");
+            };
+
+            const resetData = () => {
+                 if(window.confirm("确定要清除所有修改，恢复到初始数据吗？(此操作不可逆)")){
+                     localforage.removeItem(STORAGE_KEY).then(() => {
+                         setData(defaultData);
+                         triggerAlert("已恢复初始数据，大缓存已清空！");
+                         setIsEditingMode(false);
+                     });
+                 }
+            }
+
+            const updateHero = (key, value) => setData(prev => ({ ...prev, hero: { ...prev.hero, [key]: value } }));
+            const updateAbout = (key, value) => setData(prev => ({ ...prev, about: { ...prev.about, [key]: value } }));
+            const updateResume = (key, value) => setData(prev => ({ ...prev, resume: { ...prev.resume, [key]: value } }));
+            const updateAiWorkflow = (key, value) => setData(prev => ({ ...prev, aiWorkflow: { ...prev.aiWorkflow, [key]: value } }));
+            const updateAiTool = (index, key, value) => {
+                setData(prev => {
+                    const newTools = [...prev.aiWorkflow.tools];
+                    newTools[index] = { ...newTools[index], [key]: value };
+                    return { ...prev, aiWorkflow: { ...prev.aiWorkflow, tools: newTools } };
+                });
+            };
+            const updateProject = (id, key, value) => setData(prev => ({...prev, projects: prev.projects.map(p => p.id === id ? { ...p, [key]: value } : p)}));
+            const updateProjectDetailImage = (projectId, imgIndex, newImgSrc) => {
+                setData(prev => ({
+                    ...prev, projects: prev.projects.map(p => {
+                        if (p.id === projectId) {
+                            const newDetailImages = [...p.detailImages];
+                            newDetailImages[imgIndex] = newImgSrc;
+                            return { ...p, detailImages: newDetailImages };
+                        }
+                        return p;
+                    })
+                }));
+            };
+
+            const Navigation = () => (
+                <nav className="flex justify-between items-center p-8 md:p-12 text-xs uppercase tracking-[0.2em] text-gray-400 relative z-50">
+                    <div 
+                        className="cursor-pointer hover:text-white transition-colors flex items-center gap-2"
+                        onClick={() => navigateTo('home')}
+                    >
+                        <div className="w-2 h-2 rounded-full" style={{ backgroundColor: ACCENT_COLOR }}></div>
+                        Studio. ID
+                    </div>
+                    <div className="flex gap-4 md:gap-6 items-center">
+                        {currentView === 'home' ? (
+                            <React.Fragment>
+                                <a href="#work" className="hover:text-white transition-colors hidden md:block">Projects</a>
+                                <a href="#ai-workflow" className="hover:text-white transition-colors hidden md:block">AI Flow</a>
+                                <a href="#resume" className="hover:text-white transition-colors hidden md:block">Profile</a>
+                            </React.Fragment>
+                        ) : (
+                            <button onClick={() => navigateTo('home')} className="hover:text-white transition-colors border-b border-transparent hover:border-[#a34e24] pb-1">
+                                RETURN TO BASE
+                            </button>
+                        )}
+                        
+                        {isEditingMode && (
+                            <React.Fragment>
+                                <button onClick={exportDataForPublish} className="ml-4 text-xs bg-[#222] text-white hover:bg-[#a34e24] px-4 py-2 rounded-full transition-colors font-bold shadow-lg flex items-center gap-2">
+                                    📥 导出打包
+                                </button>
+                                <button onClick={resetData} className="ml-2 text-[10px] text-gray-500 hover:text-red-400 transition-colors underline" title="恢复初始数据">
+                                    清空缓存
+                                </button>
+                            </React.Fragment>
+                        )}
+                        <button onClick={toggleEditMode} className={`ml-2 md:ml-4 p-2 rounded-full transition-all ${isEditingMode ? 'bg-[#a34e24] text-white' : 'hover:bg-gray-800 text-gray-500'}`}>
+                            {isEditingMode ? '🔒 完成修改' : '🔑'}
+                        </button>
+                    </div>
+                </nav>
+            );
+
+            const HomeView = () => (
+                <React.Fragment>
+                    <section className="relative h-[80vh] flex flex-col justify-center items-center px-8 text-center mt-[-5vh]">
+                        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-3/4 h-[2px] opacity-30 blur-md" style={{ backgroundColor: ACCENT_COLOR }}></div>
+                        
+                        <div className="space-y-6 relative z-10 flex flex-col items-center">
+                            <EditableText tagName="p" className="text-[10px] md:text-xs tracking-[0.4em] text-gray-400 uppercase text-center" isEditing={isEditingMode} text={data.hero.subtitleTop} onChange={(val) => updateHero('subtitleTop', val)} />
+                            <h1 className="text-5xl md:text-7xl lg:text-9xl font-light tracking-[0.2em] md:tracking-[0.3em] text-white uppercase ml-[0.2em] md:ml-[0.3em]">
+                                <EditableText tagName="span" className="block" isEditing={isEditingMode} text={data.hero.titleLine1} onChange={(val) => updateHero('titleLine1', val)} />
+                                <EditableText tagName="span" className="text-3xl md:text-5xl lg:text-7xl text-gray-300 tracking-[0.4em] block mt-4" isEditing={isEditingMode} text={data.hero.titleLine2} onChange={(val) => updateHero('titleLine2', val)} />
+                            </h1>
+                            <div className="flex items-center justify-center gap-4 mt-8">
+                                <div className="h-[1px] w-8" style={{ backgroundColor: ACCENT_COLOR }}></div>
+                                <EditableText tagName="p" className="text-[10px] md:text-xs tracking-[0.3em] text-gray-500 uppercase text-center" isEditing={isEditingMode} text={data.hero.subtitleBottom} onChange={(val) => updateHero('subtitleBottom', val)} />
+                                <div className="h-[1px] w-8" style={{ backgroundColor: ACCENT_COLOR }}></div>
+                            </div>
+                        </div>
+                    </section>
+
+                    <section id="work" className="px-4 md:px-12 py-24 border-t border-gray-900">
+                        {isEditingMode && <div className="text-center text-[#a34e24] mb-8 tracking-widest text-sm animate-pulse">【编辑模式：点击图片可替换，点击文字即可修改】</div>}
+                        
+                        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 md:gap-6 max-w-[1440px] mx-auto">
+                            {data.projects.map((project) => (
+                                <div key={project.id} onClick={() => navigateTo('project', project)} className="group relative h-[35vh] md:h-[45vh] overflow-hidden cursor-pointer bg-gray-900 border border-transparent hover:border-[#a34e24]/30 transition-all rounded-sm">
+                                    <div className="absolute inset-0 bg-[#a34e24] opacity-0 group-hover:opacity-20 transition-opacity duration-700 mix-blend-color z-10 pointer-events-none"></div>
+                                    
+                                    <EditableImage src={project.image} isEditing={isEditingMode} onChange={(val) => updateProject(project.id, 'image', val)} className="absolute inset-0 w-full h-full z-0" imgClassName="w-full h-full object-cover opacity-40 group-hover:opacity-80 group-hover:scale-105 transition-all duration-1000 mix-blend-luminosity group-hover:mix-blend-normal" />
+                                    
+                                    <div className="absolute inset-0 bg-gradient-to-t from-black via-black/50 to-transparent opacity-90 group-hover:opacity-60 transition-opacity duration-700 z-20 pointer-events-none"></div>
+                                    
+                                    <div className="absolute inset-0 p-6 flex flex-col justify-between z-30 pointer-events-none">
+                                        <div className="flex justify-between items-start text-xs tracking-[0.2em] text-gray-400 transform translate-y-4 opacity-0 group-hover:translate-y-0 group-hover:opacity-100 transition-all duration-500 delay-100">
+                                            <span style={{ color: ACCENT_COLOR }}>{project.id}</span>
+                                            <span className="pointer-events-auto relative z-40"><EditableText text={project.category} isEditing={isEditingMode} onChange={(val) => updateProject(project.id, 'category', val)} /></span>
+                                        </div>
+                                        <div className="transform translate-y-4 group-hover:translate-y-0 transition-transform duration-500 pointer-events-auto relative z-40">
+                                            <EditableText tagName="h3" className="text-lg md:text-xl font-light tracking-[0.1em] text-white mb-2 uppercase" text={project.title} isEditing={isEditingMode} onChange={(val) => updateProject(project.id, 'title', val)} />
+                                            <div className="h-0 group-hover:h-16 overflow-hidden transition-all duration-500 ease-in-out">
+                                                <EditableText tagName="p" className="text-xs text-gray-400 leading-relaxed mt-3 line-clamp-2" text={project.description} isEditing={isEditingMode} onChange={(val) => updateProject(project.id, 'description', val)} />
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            ))}
+                        </div>
+                    </section>
+
+                    <section id="ai-workflow" className="py-32 px-8 md:px-12 bg-[#030303] border-t border-gray-900 relative overflow-hidden">
+                        <div className="absolute inset-0 tech-grid-bg opacity-[0.15] pointer-events-none"></div>
+                        <div className="relative z-10 flex flex-col md:flex-row justify-between items-end mb-20 gap-12 max-w-[1440px] mx-auto">
+                            <div className="w-full md:w-1/2">
+                                <EditableText tagName="h2" className="text-3xl md:text-5xl font-light tracking-[0.2em] text-white uppercase" text={data.aiWorkflow.title} isEditing={isEditingMode} onChange={(val) => updateAiWorkflow('title', val)} />
+                                <EditableText tagName="p" className="text-xs md:text-sm tracking-[0.3em] mt-4 uppercase" style={{ color: ACCENT_COLOR }} text={data.aiWorkflow.subtitle} isEditing={isEditingMode} onChange={(val) => updateAiWorkflow('subtitle', val)} />
+                                <div className="w-16 h-[1px] mt-8" style={{ backgroundColor: ACCENT_COLOR }}></div>
+                            </div>
+                            <div className="w-full md:w-1/2">
+                                <EditableText tagName="p" className="text-sm md:text-base tracking-[0.1em] text-gray-400 font-light leading-loose" text={data.aiWorkflow.description} isEditing={isEditingMode} onChange={(val) => updateAiWorkflow('description', val)} />
+                            </div>
+                        </div>
+
+                        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 relative z-10 max-w-[1440px] mx-auto">
+                            {data.aiWorkflow.tools.map((tool, idx) => (
+                                <div key={tool.id} className="p-10 border border-gray-800 bg-[#0a0a0a]/80 backdrop-blur-sm hover:border-[#a34e24]/50 transition-all duration-500 group relative overflow-hidden rounded-sm">
+                                    <div className="absolute top-0 left-0 w-full h-[2px] bg-[#a34e24] transform -translate-x-full group-hover:translate-x-0 transition-transform duration-700"></div>
+                                    <div className="text-[10px] tracking-[0.3em] mb-8 font-bold" style={{ color: ACCENT_COLOR }}>PHASE 0{tool.id}</div>
+                                    <EditableText tagName="h3" className="text-lg md:text-xl text-gray-200 tracking-[0.1em] mb-4 uppercase font-light" text={tool.name} isEditing={isEditingMode} onChange={(val) => updateAiTool(idx, 'name', val)} />
+                                    <EditableText tagName="p" className="text-sm text-gray-500 leading-relaxed tracking-[0.05em]" text={tool.desc} isEditing={isEditingMode} onChange={(val) => updateAiTool(idx, 'desc', val)} />
+                                </div>
+                            ))}
+                        </div>
+                    </section>
+
+                    <section id="about" className="pt-32 pb-16 px-8 md:px-24 flex flex-col md:flex-row items-center gap-16 relative border-t border-gray-900 max-w-[1440px] mx-auto">
+                        <div className="w-full md:w-1/2 relative">
+                            <div className="aspect-square bg-gray-900 rounded-full absolute -top-10 -left-10 w-full h-full blur-3xl opacity-20"></div>
+                            <EditableImage src={data.about.portrait || "https://images.unsplash.com/photo-1497366754035-f200968a6e72?q=80&w=1000&auto=format&fit=crop"} isEditing={isEditingMode} onChange={(val) => updateAbout('portrait', val)} className="w-full h-auto object-cover relative z-10" imgClassName="w-full h-auto object-cover grayscale contrast-150 brightness-75 rounded-sm" style={{ clipPath: 'polygon(10% 0, 100% 0, 90% 100%, 0 100%)' }} />
+                            <div className="absolute top-0 right-10 w-1/2 h-full bg-gradient-to-l from-[#a34e24]/20 to-transparent blur-xl z-20 pointer-events-none transform skew-x-12"></div>
+                        </div>
+                        <div className="w-full md:w-1/2 space-y-8 z-30 relative pointer-events-auto">
+                            <EditableText tagName="h2" className="text-3xl md:text-5xl font-light tracking-[0.2em] text-white uppercase" text={data.about.title} isEditing={isEditingMode} onChange={(val) => updateAbout('title', val)} />
+                            <div className="w-12 h-[1px] bg-[#a34e24]"></div>
+                            <EditableText tagName="p" className="text-gray-400 text-sm md:text-base leading-loose font-light" text={data.about.p1} isEditing={isEditingMode} onChange={(val) => updateAbout('p1', val)} />
+                            <EditableText tagName="p" className="text-gray-500 text-sm md:text-base leading-loose font-light" text={data.about.p2} isEditing={isEditingMode} onChange={(val) => updateAbout('p2', val)} />
+                        </div>
+                    </section>
+
+                    <section id="resume" className="pb-32 px-8 md:px-24 max-w-[1440px] mx-auto w-full relative z-40 pointer-events-auto">
+                        <div className="grid grid-cols-1 md:grid-cols-3 gap-12 pt-16 border-t border-gray-800/50">
+                            <div className="space-y-6 relative z-50 pointer-events-auto">
+                                <EditableText tagName="h3" className="text-2xl md:text-3xl font-light text-white tracking-[0.1em] pointer-events-auto" text={data.resume.name} isEditing={isEditingMode} onChange={(val) => updateResume('name', val)} />
+                                <EditableText tagName="div" className="text-sm tracking-[0.2em] uppercase pointer-events-auto" style={{ color: ACCENT_COLOR }} text={data.resume.title} isEditing={isEditingMode} onChange={(val) => updateResume('title', val)} />
+                                <div className="space-y-2 mt-8 text-sm text-gray-500 font-light tracking-[0.05em] pointer-events-auto">
+                                    <EditableText tagName="div" className="pointer-events-auto" text={data.resume.contactPhone} isEditing={isEditingMode} onChange={(val) => updateResume('contactPhone', val)} />
+                                    <EditableText tagName="div" className="pointer-events-auto" text={data.resume.contactEmail} isEditing={isEditingMode} onChange={(val) => updateResume('contactEmail', val)} />
+                                </div>
+                            </div>
+                            
+                            <div className="space-y-10 relative z-50 pointer-events-auto">
+                                <div>
+                                    <EditableText tagName="div" className="text-[10px] tracking-[0.3em] text-gray-600 mb-4 font-bold pointer-events-auto" text={data.resume.eduTitle} isEditing={isEditingMode} onChange={(val) => updateResume('eduTitle', val)} />
+                                    <EditableText tagName="div" className="text-sm text-gray-300 leading-relaxed font-light tracking-wide pointer-events-auto" text={data.resume.eduDetail} isEditing={isEditingMode} onChange={(val) => updateResume('eduDetail', val)} />
+                                </div>
+                                <div>
+                                    <EditableText tagName="div" className="text-[10px] tracking-[0.3em] text-gray-600 mb-4 font-bold pointer-events-auto" text={data.resume.expTitle} isEditing={isEditingMode} onChange={(val) => updateResume('expTitle', val)} />
+                                    <EditableText tagName="div" className="text-sm text-gray-300 leading-relaxed font-light tracking-wide pointer-events-auto" text={data.resume.expDetail} isEditing={isEditingMode} onChange={(val) => updateResume('expDetail', val)} />
+                                </div>
+                            </div>
+
+                            <div className="space-y-10 relative z-50 pointer-events-auto">
+                                <div>
+                                    <EditableText tagName="div" className="text-[10px] tracking-[0.3em] text-gray-600 mb-4 font-bold pointer-events-auto" text={data.resume.skillsTitle} isEditing={isEditingMode} onChange={(val) => updateResume('skillsTitle', val)} />
+                                    <EditableText tagName="div" className="text-sm text-gray-300 leading-loose font-light tracking-wide pointer-events-auto" text={data.resume.skillsDetail} isEditing={isEditingMode} onChange={(val) => updateResume('skillsDetail', val)} />
+                                </div>
+                            </div>
+                        </div>
+                    </section>
+                </React.Fragment>
+            );
+
+            const renderProjectDetail = () => {
+                if (!activeProject) return null;
+                const project = data.projects.find(p => p.id === activeProject.id);
+                if (!project) return null;
+
+                return (
+                    <div className="pb-32 transition-all duration-1000">
+                        <section className="relative h-[80vh] flex flex-col justify-end p-8 md:p-24 overflow-hidden">
+                            <div className="absolute inset-0 z-0">
+                                <EditableImage src={project.image} isEditing={isEditingMode} onChange={(val) => updateProject(project.id, 'image', val)} className="w-full h-full" imgClassName="w-full h-full object-cover grayscale-[40%] contrast-125" />
+                                <div className="absolute inset-0 bg-gradient-to-t from-black via-black/80 to-black/20 pointer-events-none z-10"></div>
+                            </div>
+                            <div className="relative z-30 max-w-[1440px] w-full mx-auto pointer-events-auto">
+                                <div className="flex items-center gap-4 mb-6">
+                                    <span className="text-xs tracking-[0.3em]" style={{ color: ACCENT_COLOR }}>PROJECT NO.{project.id}</span>
+                                    <div className="h-[1px] w-12 bg-gray-600"></div>
+                                    <EditableText tagName="span" className="text-xs tracking-[0.2em] text-gray-400 uppercase" text={project.category} isEditing={isEditingMode} onChange={(val) => updateProject(project.id, 'category', val)} />
+                                </div>
+                                <EditableText tagName="h1" className="text-5xl md:text-8xl font-light tracking-[0.1em] text-white uppercase mb-8" text={project.title} isEditing={isEditingMode} onChange={(val) => updateProject(project.id, 'title', val)} />
+                            </div>
+                        </section>
+
+                        <section className="px-8 md:px-24 py-24 flex flex-col md:flex-row gap-16 md:gap-32 max-w-[1440px] mx-auto">
+                            <div className="w-full md:w-1/4 space-y-12 shrink-0">
+                                <div>
+                                    <div className="text-[10px] tracking-[0.2em] text-gray-500 mb-2">ROLE</div>
+                                    <EditableText tagName="div" className="text-sm tracking-[0.1em] text-gray-200 uppercase" text={project.role} isEditing={isEditingMode} onChange={(val) => updateProject(project.id, 'role', val)} />
+                                    <div className="w-full h-[1px] bg-gray-900 mt-4"></div>
+                                </div>
+                                <div>
+                                    <div className="text-[10px] tracking-[0.2em] text-gray-500 mb-2">YEAR</div>
+                                    <EditableText tagName="div" className="text-sm tracking-[0.1em] text-gray-200 uppercase" text={project.year} isEditing={isEditingMode} onChange={(val) => updateProject(project.id, 'year', val)} />
+                                    <div className="w-full h-[1px] bg-gray-900 mt-4"></div>
+                                </div>
+                                <div>
+                                    <div className="text-[10px] tracking-[0.2em] text-gray-500 mb-2">CLIENT</div>
+                                    <EditableText tagName="div" className="text-sm tracking-[0.1em] text-gray-200 uppercase" text={project.client} isEditing={isEditingMode} onChange={(val) => updateProject(project.id, 'client', val)} />
+                                    <div className="w-full h-[1px] bg-gray-900 mt-4"></div>
+                                </div>
+                                {!isEditingMode && (
+                                    <button onClick={() => navigateTo('home')} className="mt-16 text-xs tracking-[0.2em] uppercase border px-6 py-3 hover:bg-white hover:text-black transition-all duration-300 flex items-center gap-4" style={{ borderColor: ACCENT_COLOR, color: ACCENT_COLOR }}>
+                                        <span>←</span> BACK TO LIST
+                                    </button>
+                                )}
+                            </div>
+
+                            <div className="w-full md:w-3/4 space-y-24">
+                                <div>
+                                    <h3 className="text-2xl tracking-[0.2em] text-white uppercase mb-8">Design Scope</h3>
+                                    <EditableText tagName="p" className="text-base md:text-lg text-gray-400 leading-relaxed font-light" text={project.fullDescription} isEditing={isEditingMode} onChange={(val) => updateProject(project.id, 'fullDescription', val)} />
+                                </div>
+
+                                <div className="space-y-8">
+                                    {project.detailImages.map((img, idx) => (
+                                        <div key={idx} className="relative group overflow-hidden rounded-sm">
+                                            <div className="absolute inset-0 opacity-0 group-hover:opacity-20 transition-opacity duration-1000 mix-blend-overlay pointer-events-none z-10" style={{ backgroundColor: ACCENT_COLOR }}></div>
+                                            <EditableImage src={img} isEditing={isEditingMode} onChange={(val) => updateProjectDetailImage(project.id, idx, val)} className="w-full relative z-0" imgClassName="w-full h-auto object-cover grayscale-[20%] hover:grayscale-0 transition-all duration-1000" />
+                                        </div>
+                                    ))}
+                                    {isEditingMode && (
+                                        <div 
+                                            className="w-full h-64 border-2 border-dashed border-gray-700 hover:border-[#a34e24] flex items-center justify-center cursor-pointer transition-colors"
+                                            onClick={() => {
+                                                const input = document.createElement('input');
+                                                input.type = 'file';
+                                                input.accept = 'image/*';
+                                                input.onchange = (e) => {
+                                                    const file = e.target.files[0];
+                                                    if (file) {
+                                                        const reader = new FileReader();
+                                                        reader.onload = (event) => {
+                                                            const img = new Image();
+                                                            img.onload = () => {
+                                                                const canvas = document.createElement('canvas');
+                                                                let width = img.width; let height = img.height;
+                                                                const MAX_WIDTH = 1080;
+                                                                if (width > MAX_WIDTH) {
+                                                                    height = Math.round((height * MAX_WIDTH) / width);
+                                                                    width = MAX_WIDTH;
+                                                                }
+                                                                canvas.width = width; canvas.height = height;
+                                                                const ctx = canvas.getContext('2d');
+                                                                ctx.drawImage(img, 0, 0, width, height);
+                                                                const compressedBase64 = canvas.toDataURL('image/webp', 0.6);
+                                                                const newImages = [...project.detailImages, compressedBase64];
+                                                                updateProject(project.id, 'detailImages', newImages);
+                                                            };
+                                                            img.src = event.target.result;
+                                                        };
+                                                        reader.readAsDataURL(file);
+                                                    }
+                                                };
+                                                input.click();
+                                            }}
+                                        >
+                                            <span className="text-gray-500 tracking-widest text-center">+ 添加新图纸/效果图 <br/><span className="text-[10px]">自动压缩排版</span></span>
+                                        </div>
+                                    )}
+                                </div>
+                            </div>
+                        </section>
+                    </div>
+                );
+            };
+
+            return (
+                <div className="min-h-screen bg-black text-gray-200 font-sans selection:bg-[#a34e24] selection:text-white overflow-x-hidden relative">
+                    <BackgroundGlow />
+
+                    {showPasswordModal && (
+                        <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/80 backdrop-blur-sm">
+                            <div className="bg-[#111] border border-gray-800 p-8 rounded max-w-sm w-full shadow-2xl animate-fade-in-down">
+                                <h3 className="text-white text-sm tracking-[0.2em] mb-6 uppercase border-b border-gray-800 pb-2">Access Control</h3>
+                                <input type="password" value={passwordInput} onChange={(e) => setPasswordInput(e.target.value)} className="w-full bg-black border border-gray-700 text-white p-3 mb-6 focus:outline-none focus:border-[#a34e24] transition-colors text-sm tracking-widest" placeholder="请输入编辑密码..." onKeyDown={(e) => e.key === 'Enter' && handlePasswordSubmit()} autoFocus />
+                                <div className="flex justify-end gap-4">
+                                    <button onClick={() => setShowPasswordModal(false)} className="text-gray-500 hover:text-white px-4 py-2 text-xs tracking-widest uppercase transition-colors">Cancel</button>
+                                    <button onClick={handlePasswordSubmit} className="bg-[#a34e24] hover:bg-[#8a421e] text-white px-6 py-2 text-xs tracking-widest uppercase transition-colors">Confirm</button>
+                                </div>
+                            </div>
+                        </div>
+                    )}
+
+                    {alertMessage && (
+                        <div className="fixed top-24 left-1/2 -translate-x-1/2 z-[100] bg-[#a34e24] text-white px-6 py-3 shadow-2xl tracking-[0.1em] text-sm animate-fade-in-down border border-[#c46536] rounded-sm text-center">
+                            {alertMessage}
+                        </div>
+                    )}
+
+                    <div className={`relative z-10 transition-opacity duration-1000 ${isLoaded ? 'opacity-100' : 'opacity-0'}`}>
+                        <Navigation />
+                        {currentView === 'home' ? <HomeView /> : renderProjectDetail()}
+
+                        <footer id="contact" className="py-24 px-8 text-center flex flex-col items-center justify-center border-t border-gray-900 relative overflow-hidden mt-24">
+                            <div className="absolute bottom-0 left-1/2 -translate-x-1/2 w-full h-64 bg-gradient-to-t from-[#a34e24]/10 to-transparent blur-[100px] pointer-events-none rounded-t-[100%]"></div>
+                            <div className="z-10 flex flex-col items-center space-y-8">
+                                <div className="text-2xl tracking-[0.3em] font-light text-white">C O N T A C T</div>
+                                <a href="mailto:design@studio.com" className="text-sm tracking-[0.1em] text-gray-400 hover:text-white transition-colors border-b border-gray-800 pb-1 hover:border-[#a34e24]">DESIGN@STUDIO.SPACE</a>
+                                <div className="mt-16 text-[10px] tracking-[0.2em] text-gray-700 uppercase">© {new Date().getFullYear()} Interior Architecture. Crafted by Space & Light.</div>
+                            </div>
+                        </footer>
+                    </div>
+                </div>
+            );
+        }
+
+        const root = ReactDOM.createRoot(document.getElementById('root'));
+        root.render(<App />);
+    </script>
+</body>
+</html>
